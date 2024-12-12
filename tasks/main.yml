@@ -1,0 +1,30 @@
+---
+
+- name: Lock the root account
+  ansible.builtin.user:
+    name: root
+    password: '!'
+  become: true
+
+- name: Ensure SSH root login is commented out in the main sshd_config file
+  ansible.builtin.replace:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin'
+    replace: '#PermitRootLogin'
+  become: true
+
+- name: Write SSH configuration to disable root login
+  ansible.builtin.copy:
+    dest: /etc/ssh/sshd_config.d/01-permitrootlogin.conf
+    content: "PermitRootLogin no"
+    owner: root
+    group: root
+    mode: '0644'
+  become: true
+
+# TODO: Restart only if the configuration has changed
+- name: Restart the SSH service
+  ansible.builtin.systemd_service:
+    name: sshd
+    state: restarted
+  become: true
